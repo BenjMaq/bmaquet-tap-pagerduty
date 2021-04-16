@@ -2,11 +2,9 @@ import setuptools
 
 
 setuptools.setup(
-    name='tap_pagerduty',
-    author='David Wallace',
-    author_email='david.wallace@goodeggs.com',
-    version='0.2.0',
-    url='https://github.com/goodeggs/tap-pagerduty',
+    name='bmaquet-tap-pagerduty',
+    version='1.0.1',
+    url='https://github.com/BenjMaq/bmaquet-tap-pagerduty',
     description='Singer.io tap for extracting data from Pagerduty v2 API',
     long_description='',
     long_description_content_type='text/markdown',
