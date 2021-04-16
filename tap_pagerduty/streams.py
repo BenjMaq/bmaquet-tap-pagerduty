@@ -21,7 +21,7 @@ class PagerdutyStream:
         self.params = {
             "limit": config.get('limit', 100),
             "offset": 0,
-            "start_date": config.get('start_date'),
+            "since": config.get('since'),
             "time_zone": "UTC"
         }
         self.schema = self.load_schema()
@@ -141,7 +141,7 @@ class IncidentsStream(PagerdutyStream):
     valid_replication_keys = ['last_status_change_at']
     replication_method = 'FULL_TABLE'
     valid_params = [
-        'start_date',
+        'since',
         'until',
         'date_range',
         'statuses[]',
@@ -152,7 +152,9 @@ class IncidentsStream(PagerdutyStream):
         'urgencies[]',
         'time_zone',
         'sort_by',
-        'include[]'
+        'include[]',
+        'excluded_fields[]',
+        'replication_method'
     ]
     required_params = ['until']
 
@@ -170,9 +172,11 @@ class IncidentsStream(PagerdutyStream):
         else:
             current_bookmark_dtime = None
 
-        since_dtime = datetime.strptime(self.params.get("start_date"), '%Y-%m-%dT%H:%M:%SZ')
+        since_dtime = datetime.strptime(self.params.get("since"), '%Y-%m-%dT%H:%M:%SZ')
         until_dtime = datetime.strptime(self.params.get("until"), '%Y-%m-%dT%H:%M:%SZ')
         request_range_limit = timedelta(days=179)
+
+        self.replication_method = self.params['replication_method'] if 'replication_method' in self.params.keys() else self.replication_method
 
         running_bookmark_dtime = None
         with singer.metrics.job_timer(job_type=f"list_{self.tap_stream_id}"):
@@ -180,7 +184,7 @@ class IncidentsStream(PagerdutyStream):
                 while since_dtime < until_dtime:
                     range = {
                         "offset": 0,  # Reset the offset each time.
-                        "start_date": datetime.strftime(since_dtime, '%Y-%m-%dT%H:%M:%SZ'),
+                        "since": datetime.strftime(since_dtime, '%Y-%m-%dT%H:%M:%SZ'),
                         "until": datetime.strftime(min(since_dtime + request_range_limit, until_dtime), '%Y-%m-%dT%H:%M:%SZ')
                     }
                     self.params.update(range)
@@ -193,13 +197,16 @@ class IncidentsStream(PagerdutyStream):
                                 "offset": 0,
                                 "time_zone": "UTC"
                             }
-                            record['log_entries'] = []
-                            for page in self._list_resource(url_suffix=f"/{self.tap_stream_id}/{record.get('id')}/log_entries", params=substream_params):
-                                record['log_entries'].extend(page.get('log_entries'))
 
-                            record['alerts'] = []
-                            for page in self._list_resource(url_suffix=f"/{self.tap_stream_id}/{record.get('id')}/alerts", params=substream_params):
-                                record['alerts'].extend(page.get('alerts'))
+                            if 'excluded_fields[]' in self.params.keys():
+                                if 'log_entries' not in self.params['excluded_fields[]']:
+                                    record['log_entries'] = []
+                                    for page in self._list_resource(url_suffix=f"/{self.tap_stream_id}/{record.get('id')}/log_entries", params=substream_params):
+                                        record['log_entries'].extend(page.get('log_entries'))
+                                if 'alerts' not in self.params['excluded_fields[]']:
+                                    record['alerts'] = []
+                                    for page in self._list_resource(url_suffix=f"/{self.tap_stream_id}/{record.get('id')}/alerts", params=substream_params):
+                                        record['alerts'].extend(page.get('alerts'))
 
                             if self.replication_method == 'INCREMENTAL':
                                 if (current_bookmark_dtime is None) or (record_replication_key_dtime >= current_bookmark_dtime):
@@ -261,8 +268,8 @@ class NotificationsStream(PagerdutyStream):
     replication_key = 'started_at'
     valid_replication_keys = ['started_at']
     replication_method = 'INCREMENTAL'
-    valid_params = ['time_zone', 'start_date', 'until', 'filter', 'include']
-    required_params = ['start_date', 'until']
+    valid_params = ['time_zone', 'since', 'until', 'filter', 'include']
+    required_params = ['since', 'until']
 
     def __init__(self, config, state):
         super().__init__(config, state)
@@ -278,7 +285,7 @@ class NotificationsStream(PagerdutyStream):
         else:
             current_bookmark_dtime = None
 
-        since_dtime = datetime.strptime(self.params.get("start_date"), '%Y-%m-%dT%H:%M:%SZ')
+        since_dtime = datetime.strptime(self.params.get("since"), '%Y-%m-%dT%H:%M:%SZ')
         until_dtime = datetime.strptime(self.params.get("until"), '%Y-%m-%dT%H:%M:%SZ')
         request_range_limit = timedelta(days=89)
 
@@ -288,7 +295,7 @@ class NotificationsStream(PagerdutyStream):
                 while since_dtime < until_dtime:
                     range = {
                         "offset": 0,  # Reset the offset each time.
-                        "start_date": datetime.strftime(since_dtime, '%Y-%m-%dT%H:%M:%SZ'),
+                        "since": datetime.strftime(since_dtime, '%Y-%m-%dT%H:%M:%SZ'),
                         "until": datetime.strftime(min(since_dtime + request_range_limit, until_dtime), '%Y-%m-%dT%H:%M:%SZ')
                     }
                     self.params.update(range)
