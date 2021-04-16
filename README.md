@@ -1,4 +1,4 @@
-# tap-pagerduty
+# bmaquet-tap-pagerduty
 [![PyPI version](https://badge.fury.io/py/tap-pagerduty.svg)](https://badge.fury.io/py/tap-pagerduty)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python Versions](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue.svg)](https://pypi.python.org/pypi/ansicolortags/)
