@@ -170,9 +170,11 @@ class IncidentsStream(PagerdutyStream):
         if current_bookmark is not None:
             current_bookmark_dtime = datetime.strptime(current_bookmark, '%Y-%m-%dT%H:%M:%SZ')
             since_dtime = datetime.strptime(current_bookmark, '%Y-%m-%dT%H:%M:%SZ')
+            LOGGER.info(f'since_dtime={s}'.format(s=since_dtime))
         else:
             current_bookmark_dtime = None
             since_dtime = datetime.strptime(self.params.get("since"), '%Y-%m-%dT%H:%M:%SZ')
+            LOGGER.info(f'since_dtime={s}'.format(s=since_dtime))
 
         until_dtime = datetime.strptime(self.params.get("until"), '%Y-%m-%dT%H:%M:%SZ')
         request_range_limit = timedelta(days=179)
