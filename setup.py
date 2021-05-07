@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='bmaquet-tap-pagerduty',
-    version='1.0.1',
+    version='1.0.2',
     url='https://github.com/BenjMaq/bmaquet-tap-pagerduty',
     description='Singer.io tap for extracting data from Pagerduty v2 API',
     long_description='',
